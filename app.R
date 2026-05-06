@@ -4,247 +4,238 @@ library(shinydashboard)
 library(shinythemes)
 library(tidyverse)
 
-letter_grade_std <- function(score){
-  cut_pts <- c(-Inf, 59.4, 69.4, 73.4, 76.4, 79.4, 83.4, 86.4, 89.4, 93.4, Inf)
+letter_grade_std <- function(score) {
+  cut_pts <- c(-Inf, 60, 70, 73, 77, 80, 83, 87, 90, 93, Inf)
   labs <- c("F", "D", "C-", "C", "C+", "B-", "B", "B+", "A-", "A")
-  
-  as.character(cut(score, breaks = cut_pts, labels = labs))
+
+  as.character(cut(score, breaks = cut_pts, labels = labs, right = FALSE))
 }
 
+format_grade <- function(score) {
+  paste0(round(score, 2), "% (", letter_grade_std(score), ")")
+}
 
 ui <- dashboardPage(
-  
   skin = "purple",
-  
+
   dashboardHeader(
-    title = "Data Science II (STAT 301-2) Grading Options - Winter 2020",
+    title = "STAT 202 Grading Options - Spring 2026",
     titleWidth = 550
   ),
-  
+
   dashboardSidebar(
     width = 355,
-    div(style="margin-left: 16px", 
-        br(),
-        h3("Grading Options"),
-        hr(),
-        h4("Opt to submit a final report"),
-        p("The grade category weights are the same as those outlined in
-          the course syllabus which is provided below in more detail."),
-        p("If a student's course grade would have been better by not submitting a final report,
-          then the student will receive the better course grade."),
-        "5% -- Attendance", br(),
-        "10% -- Participation", br(),
-        "60% -- Labs", br(),
-        "2% -- Data Memo", br(),
-        "5% -- Final Presentation", br(),
-        "18% -- Final Report", br(),
-        hr(),
-        h4("Opt not to submit a final report"),
-        p("The grade category weights change by simply taking the weight final report 
-        and add it to the weight of the Labs category."),
-        "5% -- Attendance", br(),
-        "10% -- Participation", br(),
-        strong("78% -- Labs"), br(),
-        "2% -- Data Memo", br(),
-        "5% -- Final Presentation", br(),
-        strong("0% -- Final Report")
+    div(
+      style = "margin-left: 16px",
+      br(),
+      h3("Optional Final Exam Policy"),
+      hr(),
+      h4("Without final exam"),
+      p("This uses the standard course category weights from the syllabus."),
+      "5% -- Small Assignments", br(),
+      "5% -- Reading Tutorials", br(),
+      "10% -- Learning Checks", br(),
+      "20% -- Homework", br(),
+      "30% -- Exam 1", br(),
+      "30% -- Exam 2", br(),
+      hr(),
+      h4("With optional final exam"),
+      p("The final exam can only improve your grade. If this option is better,
+        Exam 1 and Exam 2 each count for 15%, and the final exam counts for 30%."),
+      "5% -- Small Assignments", br(),
+      "5% -- Reading Tutorials", br(),
+      "10% -- Learning Checks", br(),
+      "20% -- Homework", br(),
+      strong("15% -- Exam 1"), br(),
+      strong("15% -- Exam 2"), br(),
+      strong("30% -- Final Exam")
     )
   ),
-  
-  dashboardBody(
-    # Boxes need to be put in a row (or column)
-    fluidRow(
-      column(width = 6,
-             
-             # 
-             box(
-               title = "Grade Categories", status = "info", solidHeader = TRUE,
-               width = NULL,
-               
-               p("Enter your grade information for each of the categories below.
-                 You can find the information in the Grade section of the course 
-                 Canvas page."),
-               p("For the exams you will enter the actual/estiamted scores for the exams. 
-                 For the other categories you will need to enter your grade percentage
-                 for the respective categories.")
-             ),
-             
-             
-             # final exam info
-             box(
-               title = "Final Project Scores", status = "info", solidHeader = TRUE,
-               collapsible = TRUE, width = NULL, collapsed = TRUE,
-               
-               # p("Enter estimated scores for each of portion of the final exam. 
-               #   A good starting estimate would be the grade achieved on the corresponding 
-               #   portion of the midterm exam."),
-               
-               sliderInput(
-                 inputId = "final_report_slider", 
-                 h4("Final Report (Estimated)"),
-                 min = 0, 
-                 max = 90, 
-                 value = 75, 
-                 round = -2, 
-                 step = 0.25),
-               
-               sliderInput(
-                 inputId = "final_presentation_slider", 
-                 h4("Final Presentation (Estimated)"),
-                 min = 0, 
-                 max = 25, 
-                 value = 20, 
-                 round = -2, 
-                 step = 0.25),
-               
-               sliderInput(
-                 inputId = "data_memo_slider", 
-                 h4("Data Memo"),
-                 min = 0, 
-                 max = 10, 
-                 value = 10, 
-                 round = -2, 
-                 step = 0.25)
-               
-             ),
-             
-             # Low weight categories
-             box(
-               title = "Other Grading Categories", status = "info", solidHeader = TRUE,
-               collapsible = TRUE, width = NULL, collapsed = TRUE,
-               
-               p("Find your percentages at the bottom of the Grade page of the course Canvas site."),
-               
-               sliderInput(
-                 inputId = "lab_slider", 
-                 h4("Labs"),
-                 min = 0, 
-                 max = 101, 
-                 value = 90, 
-                 round = -2, 
-                 post = "%", 
-                 step = 0.01),
-               
-               sliderInput(
-                 inputId = "attend_slider", 
-                 h4("Attendance"),
-                 min = 0, 
-                 max = 100, 
-                 value = 95, 
-                 round = -2, 
-                 post = "%", 
-                 step = 0.01),
-               
-               sliderInput(
-                 inputId = "part_slider", 
-                 h4("Participation"),
-                 min = 0, 
-                 max = 100, 
-                 value = 100, 
-                 round = -2, 
-                 post = "%", 
-                 step = 0.01)
-              
-             )
-      ),
-      
-      column(width = 6,
-             
-             box(
-               title = "Your Estimated Grade", status = "success", 
-               solidHeader = TRUE, width = NULL,
-               
-               h4(strong(textOutput("grade"))),
-               # p("This is an estimated course grade.", style = "font-size:12px"),
-               
-               hr(),
-               p("We take the best of the two possible grading options. 
-                 See side bar for more details."),
-               br(),
-               h5(strong("Course Grade Under Each Option:")),
-               textOutput("grade_with_final"),
-               textOutput("grade_no_final")
-             ),
-             
-             box(
-               title = "Important Note", status = "danger", 
-               solidHeader = TRUE, width = NULL,
-               
-               p("This app is meant to help students determine if they want to take the online final exam.
-               Please remember this app supplies an ESTIMATED course grade."),
-               
-               p("")
-             ),
-             
-             box(
-               title = "Grading Note From Syllabus", status = "warning", 
-               solidHeader = TRUE, width = NULL,
-               
-               p("Final grades will be rounded to nearest tenth of a percent. We reserve the right to alter
-                 the course grading scale. However, any alterations will be limited to those that would be 
-                 beneficial to students (i.e. an upward grade curve).")
-             )
-             
-      ),
-      
-      
-    )
-  ))
 
+  dashboardBody(
+    fluidRow(
+      column(
+        width = 6,
+
+        box(
+          title = "Grade Categories", status = "info", solidHeader = TRUE,
+          width = NULL,
+
+          p("Enter your current or estimated percentage for each grade category.
+            You can find existing category scores in the Grades section of Canvas."),
+          p("Use the final exam slider to estimate the score you might earn on the
+            optional cumulative final exam.")
+        ),
+
+        box(
+          title = "Coursework Scores", status = "info", solidHeader = TRUE,
+          collapsible = TRUE, width = NULL,
+
+          sliderInput(
+            inputId = "small_assignments_slider",
+            label = h4("Small Assignments"),
+            min = 0,
+            max = 100,
+            value = 95,
+            round = -2,
+            post = "%",
+            step = 0.01
+          ),
+
+          sliderInput(
+            inputId = "reading_tutorials_slider",
+            label = h4("Reading Tutorials"),
+            min = 0,
+            max = 100,
+            value = 95,
+            round = -2,
+            post = "%",
+            step = 0.01
+          ),
+
+          sliderInput(
+            inputId = "learning_checks_slider",
+            label = h4("Learning Checks"),
+            min = 0,
+            max = 100,
+            value = 95,
+            round = -2,
+            post = "%",
+            step = 0.01
+          ),
+
+          sliderInput(
+            inputId = "homework_slider",
+            label = h4("Homework"),
+            min = 0,
+            max = 100,
+            value = 90,
+            round = -2,
+            post = "%",
+            step = 0.01
+          )
+        ),
+
+        box(
+          title = "Exam Scores", status = "info", solidHeader = TRUE,
+          collapsible = TRUE, width = NULL,
+
+          sliderInput(
+            inputId = "exam_1_slider",
+            label = h4("Exam 1"),
+            min = 0,
+            max = 100,
+            value = 85,
+            round = -2,
+            post = "%",
+            step = 0.01
+          ),
+
+          sliderInput(
+            inputId = "exam_2_slider",
+            label = h4("Exam 2"),
+            min = 0,
+            max = 100,
+            value = 85,
+            round = -2,
+            post = "%",
+            step = 0.01
+          ),
+
+          sliderInput(
+            inputId = "final_exam_slider",
+            label = h4("Optional Final Exam (Estimated)"),
+            min = 0,
+            max = 100,
+            value = 85,
+            round = -2,
+            post = "%",
+            step = 0.01
+          )
+        )
+      ),
+
+      column(
+        width = 6,
+
+        box(
+          title = "Your Estimated Grade", status = "success",
+          solidHeader = TRUE, width = NULL,
+
+          h4(strong(textOutput("grade"))),
+          hr(),
+          p("The reported estimate uses the better of the two grading options
+            described in the syllabus."),
+          br(),
+          h5(strong("Course Grade Under Each Option:")),
+          textOutput("grade_no_final"),
+          textOutput("grade_with_final")
+        ),
+
+        box(
+          title = "Important Note", status = "danger",
+          solidHeader = TRUE, width = NULL,
+
+          p("This app is meant to help students estimate whether the optional final
+            exam could improve their course grade. It is not an official grade
+            calculation.")
+        ),
+
+        box(
+          title = "Grading Scale From Syllabus", status = "warning",
+          solidHeader = TRUE, width = NULL,
+
+          "93.0-100% -- A", br(),
+          "90.0-92.9% -- A-", br(),
+          "87.0-89.9% -- B+", br(),
+          "83.0-86.9% -- B", br(),
+          "80.0-82.9% -- B-", br(),
+          "77.0-79.9% -- C+", br(),
+          "73.0-76.9% -- C", br(),
+          "70.0-72.9% -- C-", br(),
+          "60.0-69.9% -- D", br(),
+          "Below 60.0% -- F"
+        )
+      )
+    )
+  )
+)
 
 server <- function(input, output) {
-  
-  opt_no_final <- reactive({
-    5 * input$final_presentation_slider/25 +
-      2 * input$data_memo_slider/10 +
-      78 * input$lab_slider/100 +
-      5 * input$attend_slider/100 +
-      10 * input$part_slider/100
+  no_final <- reactive({
+    5 * input$small_assignments_slider / 100 +
+      5 * input$reading_tutorials_slider / 100 +
+      10 * input$learning_checks_slider / 100 +
+      20 * input$homework_slider / 100 +
+      30 * input$exam_1_slider / 100 +
+      30 * input$exam_2_slider / 100
   })
-  
-  opt_with_final <- reactive({
-    18 * input$final_report_slider/90 +
-      5 * input$final_presentation_slider/25 +
-      2 * input$data_memo_slider/10 +
-      60 * input$lab_slider/100 +
-      5 * input$attend_slider/100 +
-      10 * input$part_slider/100
+
+  with_final <- reactive({
+    5 * input$small_assignments_slider / 100 +
+      5 * input$reading_tutorials_slider / 100 +
+      10 * input$learning_checks_slider / 100 +
+      20 * input$homework_slider / 100 +
+      15 * input$exam_1_slider / 100 +
+      15 * input$exam_2_slider / 100 +
+      30 * input$final_exam_slider / 100
   })
-  
+
   best_grade <- reactive({
-    if(opt_with_final() > opt_no_final()){
-      grade <- opt_with_final() 
-    }else{
-      grade <- opt_no_final() 
-    }
-    
-    grade
+    max(no_final(), with_final())
   })
-  
-  
-  output$grade_no_final <- renderText({ 
-    paste0("Opt not to submit a final report: ", 
-           round(opt_no_final(), 2),
-           "% (",
-           letter_grade_std(opt_no_final()),
-           ")")
+
+  output$grade_no_final <- renderText({
+    paste0("Do not take optional final exam: ", format_grade(no_final()))
   })
-  
-  output$grade_with_final <- renderText({ 
-    paste0("Opt to submit a final report: ", 
-           round(opt_with_final(), 2),
-           "% (",
-           letter_grade_std(opt_with_final()),
-           ")")
+
+  output$grade_with_final <- renderText({
+    paste0("Take optional final exam: ", format_grade(with_final()))
   })
-  
-  output$grade <- renderText({ 
-    paste0(round(best_grade(), 2),
-           "% (",
-           letter_grade_std(best_grade()),
-           ")")
+
+  output$grade <- renderText({
+    format_grade(best_grade())
   })
-  
 }
 
 shinyApp(ui, server)
