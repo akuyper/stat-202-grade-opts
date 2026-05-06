@@ -24,8 +24,12 @@
 *.utf8.md
 *.knit.md
 
+# rsconnect -- shinyio deployment
+rsconnect/
+
 # R Environment Variables
 .Renviron
+.env
 
 # mac related files
 *.DS_Store
