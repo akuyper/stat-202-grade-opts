@@ -55,7 +55,8 @@ grade_input <- function(input_id, label, value, min = 0, max = 100) {
       max = max,
       value = value,
       step = 0.1,
-      width = "100%"
+      width = "100%",
+      updateOn = "blur"
     )
   )
 }
@@ -287,7 +288,8 @@ server <- function(input, output, session) {
         max = 100,
         value = clamp(current_value, final_min, 100),
         step = 0.1,
-        width = "100%"
+        width = "100%",
+        updateOn = "blur"
       )
     )
   })
