@@ -77,7 +77,11 @@ ui <- page_sidebar(
   title = div(
     class = "app-title",
     span(class = "course-code", "STAT 202"),
-    span("Optional Final Exam - Spring 2026")
+    span("Optional Final Exam - Spring 2026"),
+    div(
+      class = "mode-toggle",
+      input_dark_mode(id = "color_mode", mode = "light")
+    )
   ),
   theme = bs_theme(
     version = 5,
@@ -101,11 +105,11 @@ ui <- page_sidebar(
       "html[data-bs-theme='dark'] body { background: #0F172A; color: var(--ink); }\n",
       ".bslib-page-title { background: var(--surface); border-bottom: 4px solid var(--accent); color: var(--ink); padding: .55rem .9rem; }\n",
       "html[data-bs-theme='dark'] .bslib-page-title { background: #111827; }\n",
-      ".app-title { display: flex; gap: .55rem; align-items: baseline; flex-wrap: wrap; font-weight: 800; }\n",
+      ".app-title { display: flex; gap: .55rem; align-items: baseline; flex-wrap: wrap; font-weight: 800; width: 100%;}\n",
       ".course-code { color: var(--accent); font-size: .9rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }\n",
       ".sidebar { background: var(--surface); border-right: 1px solid var(--border-soft); }\n",
       ".sidebar h2 { color: var(--ink); font-size: 1.14rem; margin: .1rem 0 .42rem; }\n",
-      ".mode-toggle { align-items: center; display: flex; gap: .75rem; justify-content: space-between; margin-bottom: .65rem; }\n",
+      ".mode-toggle { align-items: center; display: flex; gap: .75rem; justify-content: flex-end; margin-bottom: 0; margin-left: auto; }\n",
       ".mode-toggle label { color: var(--ink); font-weight: 750; margin-bottom: 0; }\n",
       ".grade-help { color: var(--ink-soft); font-size: .9rem; font-weight: 700; margin: 0 0 .45rem; }\n",
       ".grade-grid, .grade-scale-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .42rem .6rem; max-width: 560px; }\n",
@@ -140,11 +144,6 @@ ui <- page_sidebar(
   ),
   sidebar = sidebar(
     width = 330,
-    div(
-      class = "mode-toggle",
-      span("Display"),
-      input_dark_mode(id = "color_mode", mode = "light")
-    ),
     h2("Weighting Policies"),
     div(
       class = "policy-table",
