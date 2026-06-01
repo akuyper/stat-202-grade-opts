@@ -18,7 +18,7 @@ format_grade <- function(score) {
 }
 
 format_points <- function(score) {
-  paste0(ifelse(score > 0, "+", ""), round(score, 2), " pts")
+  paste0("+", round(score, 2), " pts")
 }
 
 `%||%` <- function(x, y) {
@@ -41,8 +41,8 @@ grade_value <- function(x) {
   bounded_value(x, default = 80, min_value = 0, max_value = 100)
 }
 
-bonus_value <- function(x) {
-  bounded_value(x, default = 0, min_value = 0, max_value = 5)
+activity_count_value <- function(x) {
+  round(bounded_value(x, default = 0, min_value = 0, max_value = 20))
 }
 
 grade_input <- function(input_id, label, value, min = 0, max = 100) {
@@ -55,6 +55,22 @@ grade_input <- function(input_id, label, value, min = 0, max = 100) {
       max = max,
       value = value,
       step = 0.1,
+      width = "100%",
+      updateOn = "blur"
+    )
+  )
+}
+
+activity_input <- function(input_id, label, value) {
+  div(
+    class = "grade-input",
+    numericInput(
+      inputId = input_id,
+      label = label,
+      min = 0,
+      max = 20,
+      value = value,
+      step = 1,
       width = "100%",
       updateOn = "blur"
     )
@@ -122,6 +138,7 @@ ui <- page_sidebar(
       ".policy-row { align-items: center; border-bottom: 1px solid var(--border-soft); display: grid; gap: .38rem; grid-template-columns: minmax(0, 1.25fr) .72fr .72fr; padding: .2rem .05rem; }\n",
       ".policy-row.header { color: var(--accent); font-size: .76rem; font-weight: 900; text-transform: uppercase; }\n",
       ".policy-category { font-weight: 750; }\n",
+      ".bonus-note { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); font-size: .86rem; font-weight: 750; line-height: 1.3; margin: .65rem 0 0; padding: .42rem .48rem; }\n",
       ".sidebar-footnote { border-top: 1px solid var(--border-soft); color: var(--ink-soft); font-size: .78rem; line-height: 1.25; margin-top: .65rem; padding-top: .48rem; }\n",
       ".bslib-grid { align-items: start; }\n",
       ".card { align-self: start; background: var(--surface); border: 1px solid var(--border-soft); box-shadow: none; }\n",
@@ -160,6 +177,10 @@ ui <- page_sidebar(
       policy_row("Exam 2", "30%", "15%"),
       policy_row("Final Exam", "0%", "30%")
     ),
+    p(
+      class = "bonus-note",
+      "Lecture activity bonus: earn up to +1 percentage point on your final course grade."
+    ),
     div(
       class = "sidebar-footnote",
       "Disclaimer: this app is an estimate for planning around the optional final exam, not an official grade calculation."
@@ -180,8 +201,8 @@ ui <- page_sidebar(
           grade_input("small_assignments", "Small Assignments", 90),
           grade_input("reading_tutorials", "Reading Tutorials", 90),
           grade_input("learning_checks", "Learning Checks", 85),
-          grade_input("homework", "Homework",85),
-          grade_input("homework_bonus", "Homework Bonus", 0, min = 0, max = 5),
+          grade_input("homework", "Homework", 85),
+          activity_input("bonus_activities", "Completed Bonus Activities (0-20)", 0),
           grade_input("exam_1", "Exam 1", 80),
           grade_input("exam_2", "Exam 2", 80),
           uiOutput("final_exam_control")
@@ -198,6 +219,11 @@ ui <- page_sidebar(
           class = "improvement",
           span(class = "improvement-label", "Optional final improvement"),
           span(class = "improvement-value", textOutput("grade_difference", inline = TRUE))
+        ),
+        div(
+          class = "improvement",
+          span(class = "improvement-label", "Lecture activity bonus"),
+          span(class = "improvement-value", textOutput("course_bonus", inline = TRUE))
         ),
         div(
           class = "policy-result",
@@ -261,14 +287,30 @@ server <- function(input, output, session) {
   )
 
   lapply(grade_input_ids, keep_numeric_in_bounds, min_value = 0, max_value = 100, default = 80)
-  keep_numeric_in_bounds("homework_bonus", min_value = 0, max_value = 5, default = 0)
+  keep_numeric_in_bounds("bonus_activities", min_value = 0, max_value = 20, default = 0)
+
+  observeEvent(input$bonus_activities, {
+    current_value <- input$bonus_activities
+    corrected_value <- activity_count_value(current_value)
+
+    if (is.null(current_value) || is.na(current_value) || !isTRUE(all.equal(current_value, corrected_value))) {
+      updateNumericInput(
+        session,
+        inputId = "bonus_activities",
+        min = 0,
+        max = 20,
+        step = 1,
+        value = corrected_value
+      )
+    }
+  }, ignoreInit = FALSE)
 
   exam_average <- reactive({
     mean(c(grade_value(input$exam_1), grade_value(input$exam_2)))
   })
 
-  homework_score <- reactive({
-    clamp(grade_value(input$homework) + bonus_value(input$homework_bonus), 0, 100)
+  course_bonus <- reactive({
+    activity_count_value(input$bonus_activities) / 20
   })
 
   output$final_exam_control <- renderUI({
@@ -318,19 +360,21 @@ server <- function(input, output, session) {
       5 * grade_value(input$small_assignments) / 100 +
       5 * grade_value(input$reading_tutorials) / 100 +
       10 * grade_value(input$learning_checks) / 100 +
-      20 * homework_score() / 100 +
+      20 * grade_value(input$homework) / 100 +
       30 * grade_value(input$exam_1) / 100 +
-      30 * grade_value(input$exam_2) / 100
+      30 * grade_value(input$exam_2) / 100 +
+      course_bonus()
   })
 
   with_final <- reactive({
       5 * grade_value(input$small_assignments) / 100 +
       5 * grade_value(input$reading_tutorials) / 100 +
       10 * grade_value(input$learning_checks) / 100 +
-      20 * homework_score() / 100 +
+      20 * grade_value(input$homework) / 100 +
       15 * grade_value(input$exam_1) / 100 +
       15 * grade_value(input$exam_2) / 100 +
-      30 * final_exam_score() / 100
+      30 * final_exam_score() / 100 +
+      course_bonus()
   })
 
   best_grade <- reactive({
@@ -339,6 +383,10 @@ server <- function(input, output, session) {
 
   grade_difference <- reactive({
     with_final() - no_final()
+  })
+
+  output$course_bonus <- renderText({
+    format_points(course_bonus())
   })
 
   output$grade_no_final <- renderText({
