@@ -309,17 +309,18 @@ server <- function(input, output, session) {
     mean(c(grade_value(input$exam_1), grade_value(input$exam_2)))
   })
 
+  final_exam_minimum <- reactive({
+    round(exam_average(), 2)
+  })
+
   course_bonus <- reactive({
     activity_count_value(input$bonus_activities) / 20
   })
 
-  output$final_exam_control <- renderUI({
-    final_min <- round(exam_average(), 1)
-    current_value <- input$final_exam
+  final_exam_score_value <- reactiveVal(NULL)
 
-    if (is.null(current_value) || is.na(current_value)) {
-      current_value <- final_min
-    }
+  output$final_exam_control <- renderUI({
+    final_min <- final_exam_minimum()
 
     div(
       class = "grade-input",
@@ -328,18 +329,33 @@ server <- function(input, output, session) {
         label = "Optional Final Exam (%)",
         min = final_min,
         max = 100,
-        value = clamp(current_value, final_min, 100),
-        step = 0.1,
+        value = final_min,
+        step = 0.01,
         width = "100%",
         updateOn = "blur"
       )
     )
   })
 
-  observe({
-    final_min <- round(exam_average(), 1)
+  observeEvent(final_exam_minimum(), {
+    final_min <- final_exam_minimum()
+
+    final_exam_score_value(final_min)
+    updateNumericInput(
+      session,
+      inputId = "final_exam",
+      min = final_min,
+      max = 100,
+      value = final_min
+    )
+  }, ignoreInit = FALSE, priority = 100)
+
+  observeEvent(input$final_exam, {
+    final_min <- final_exam_minimum()
     current_value <- input$final_exam
     corrected_value <- bounded_value(current_value, default = final_min, min_value = final_min, max_value = 100)
+
+    final_exam_score_value(corrected_value)
 
     if (is.null(current_value) || is.na(current_value) || !isTRUE(all.equal(current_value, corrected_value))) {
       updateNumericInput(
@@ -350,10 +366,10 @@ server <- function(input, output, session) {
         value = corrected_value
       )
     }
-  })
+  }, ignoreInit = FALSE)
 
   final_exam_score <- reactive({
-    bounded_value(input$final_exam, default = exam_average(), min_value = exam_average(), max_value = 100)
+    bounded_value(final_exam_score_value(), default = final_exam_minimum(), min_value = final_exam_minimum(), max_value = 100)
   })
 
   no_final <- reactive({
