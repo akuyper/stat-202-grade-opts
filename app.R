@@ -13,8 +13,14 @@ letter_grade_std <- function(score) {
   as.character(cut(score, breaks = cut_pts, labels = labs, right = FALSE))
 }
 
+round_grade_percent <- function(score) {
+  floor(score * 10 + 0.5) / 10
+}
+
 format_grade <- function(score) {
-  paste0(round(score, 2), "% (", letter_grade_std(score), ")")
+  rounded_score <- round_grade_percent(score)
+
+  paste0(formatC(score, format = "f", digits = 2), "% (", letter_grade_std(rounded_score), ")")
 }
 
 format_points <- function(score) {
@@ -152,6 +158,7 @@ ui <- page_sidebar(
       ".policy-result { border-top: 1px solid var(--border-soft); display: flex; gap: .8rem; justify-content: space-between; padding: .3rem 0; }\n",
       ".policy-result span:first-child { color: var(--ink-soft); font-weight: 800; }\n",
       ".policy-result span:last-child { color: var(--ink); font-weight: 900; white-space: nowrap; }\n",
+      ".results-note { border-top: 1px solid var(--border-soft); color: var(--ink-soft); font-size: .78rem; font-weight: 700; line-height: 1.25; margin: .22rem 0 0; padding-top: .45rem; }\n",
       ".grade-badge { align-items: center; background: var(--accent-soft); border: 1px solid var(--border-soft); border-left: 4px solid var(--accent); border-radius: .35rem; display: flex; font-size: .9rem; gap: .45rem; justify-content: space-between; padding: .28rem .42rem; }\n",
       ".grade-letter { color: var(--accent); font-weight: 900; }\n",
       ".accordion { max-width: 560px; --bs-accordion-btn-padding-y: .4rem; --bs-accordion-btn-padding-x: .66rem; --bs-accordion-body-padding-y: .55rem; --bs-accordion-body-padding-x: .6rem; }\n",
@@ -234,6 +241,10 @@ ui <- page_sidebar(
           class = "policy-result",
           span("Optional final policy"),
           span(textOutput("grade_with_final", inline = TRUE))
+        ),
+        p(
+          class = "results-note",
+          "Final letter grades are determined by rounding the course percentage to the nearest tenth, then assigning the letter grade."
         )
       )
     ),
